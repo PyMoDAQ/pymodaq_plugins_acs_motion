@@ -85,6 +85,10 @@ class Axis(object):
         """Performance a point to point move in relative coordinates."""
         self.ptp(distance, coordinates="relative", wait=wait)
 
+    def halt(self, wait=acsc.SYNCHRONOUS):
+        """Stops the motion of the axis using the defined deceleration."""
+        acsc.halt(self.controller.hc, self.axisno, wait)
+
     @property
     def axis_state(self):
         """Returns axis state dict."""
