@@ -36,37 +36,25 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     controller: object
         The particular object that allow the communication with the hardware, in general a python wrapper around the
          hardware library.
-         
-    # TODO add your particular attributes here if any
 
     """
     is_multiaxes = True
-     # Configured for only two axiss, but can be changed to 8 axes.
-    _axis_names: Union[List[str], Dict[str, int]] = {'Axis0':0, 'Axis1':1}
-    # Here all axes are translations stages with the same unit if difefrent type of stages are used as for example one translation and one rotation the dict must be updated in consequences.
-    _controller_units: Union[str, List[str]] = {'Axis0': 'mm', 'Axis1': 'mm'}
-     # WARNING: Please refer to your specific stage to set a meaningful value. If you use different type of stages (ex: translation and rotation) it can be replaced by the appropriate epsilon value.
-    _epsilon: Union[float, List[float]] = 0.00001 
-    data_actuator_type = DataActuatorType.DataActuator  
-    # # wether you use the new data style for actuator otherwise set this
-    # as  DataActuatorType.float  (or entirely remove the line)
-    # At this step I will not use the new data dtyle it might be implemented in the future
+    # Configured for two axes, can be extended up to 8 axes.
+    _axis_names: Union[List[str], Dict[str, int]] = {'Axis0': 0, 'Axis1': 1}
+    # All axes are translation stages here; adapt per axis if stages of different types are used.
+    _controller_units: Union[str, Dict[str, str]] = {'Axis0': 'mm', 'Axis1': 'mm'}
+    # Tolerance used to decide that the target is reached; refer to your stages for a meaningful value.
+    _epsilons: Union[float, Dict[str, float]] = {'Axis0': 0.00001, 'Axis1': 0.00001}
+    data_actuator_type = DataActuatorType.DataActuator
     
     params = [ {'title': 'Serial Number', 'name': 'serial_num', 'type': 'str', 
                 'value': '', 'readonly': True,},
                 {'title': 'Buffer Number', 'name': 'buff_num', 'type': 'int', 
                 'value': 1, 'limits': [0, 9],}  
-                ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names, epsilon=_epsilon)
-    # _epsilon is the initial default value for the epsilon parameter allowing pymodaq to know if the controller reached
-    # the target value. It is the developer responsibility to put here a meaningful value
+                ] + comon_parameters_fun(is_multiaxes,axis_names=_axis_names)
 
     def ini_attributes(self):
-        #  TODO declare the type of the wrapper (and assign it to self.controller) you're going to use for easy
-        #  autocompletion
         self.controller: Controller = None
-
-        #TODO declare here attributes you want/need to init with a default value
-        pass
 
     def get_actuator_value(self):
         """Get the current value from the hardware with scaling conversion.
@@ -82,45 +70,21 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         pos = self.get_position_with_scaling(pos)
         return pos
 
-    def user_condition_to_reach_target(self) -> bool:
-        """ Implement a condition for exiting the polling mechanism and specifying that the
-        target value has been reached
-
-       Returns
-        -------
-        bool: if True, PyMoDAQ considers the target value has been reached
-        """
-        # TODO either delete this method if the usual polling is fine with you, but if need you can
-        #  add here some other condition to be fullfilled either a completely new one or
-        #  using or/and operations between the epsilon_bool and some other custom booleans
-        #  for a usage example see DAQ_Move_brushlessMotor from the Thorlabs plugin
-        return True
-
     def close(self):
         """Terminate the communication protocol"""
         self.controller.disable_all()
         self.controller.disconnect()
 
     def commit_settings(self, param: Parameter):
-        """Apply the consequences of a change of value in the detector settings
+        """Apply the consequences of a change of value in the settings
 
         Parameters
         ----------
         param: Parameter
             A given parameter (within detector_settings) whose value has been changed by the user
         """
-        ## TODO for your custom plugin
         if param.name() == 'axis':
-            self.get_actuator_value()  # to update the current position of the axis
-            #self.axis_unit = 'mm'
-            # do this only if you can and if the units are not known beforehand, for instance
-            # if the motors connected to the controller are of different type (mm, µm, nm, , etc...)
-            # see BrushlessDCMotor from the thorlabs plugin for an exemple
-
-        elif param.name() == "a_parameter_you've_added_in_self.params":
-           self.controller.your_method_to_apply_this_param_change()
-        else:
-            pass
+            self.get_actuator_value()  # update the current position of the newly selected axis
 
     def ini_stage(self, controller=None):
         """Actuator communication initialization
