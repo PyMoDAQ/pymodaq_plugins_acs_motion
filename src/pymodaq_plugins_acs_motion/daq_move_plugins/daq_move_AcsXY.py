@@ -6,7 +6,10 @@ from pymodaq.control_modules.move_utility_classes import (DAQ_Move_base, comon_p
 from pymodaq_utils.utils import ThreadCommand  # object used to send info back to the main thread
 from pymodaq_gui.parameter import Parameter
 
-from pymodaq_plugins_acs_motion.hardware.acscontrol import Controller  # ACS controller wrapper
+try:
+    from pymodaq_plugins_acs_motion.hardware.acscontrol import Controller  # ACS controller wrapper
+except AttributeError as e:  # the vendor library acspy uses ctypes.windll, which only exists on Windows
+    raise ImportError('The acspy library is only usable on Windows') from e
 
 
 class DAQ_Move_AcsXY(DAQ_Move_base):
