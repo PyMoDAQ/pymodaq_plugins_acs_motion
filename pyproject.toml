@@ -12,7 +12,11 @@ package-url = 'https://github.com/JMargueritatLab/pymodaq_plugins_acs_motion'
 name = "pymodaq_plugins_acs_motion" #todo modify template by your plugin short name
 description = 'This plugins interact with ACS motion controllers to drive stages.'
 dependencies = [
-    "pymodaq>=5.0.0", "ACSpy"
+    "pymodaq>=5.3.2",
+    "pymodaq_utils>=5.3.1",
+    "pymodaq_gui>=5.3.0",
+    "pymodaq_data>=5.3.0",
+    "ACSpy",
     #todo: list here all dependencies your package may have
 ]
 
