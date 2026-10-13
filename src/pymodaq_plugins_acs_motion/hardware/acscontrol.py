@@ -30,6 +30,10 @@ class Controller(object):
         """Loads a buffer file."""
         acsc.runBuffer(self.hc, buffer_number)
 
+    def wait_program_end(self, buffer_number=1, timeout=120000):
+        """Waits until the program of the buffer has finished (timeout in ms)."""
+        acsc.waitProgramEnd(self.hc, buffer_number, timeout)
+        
     def stop_buffer(self, buffer_number=1):
         """Stops a buffer file."""
         acsc.stopBuffer(self.hc, buffer_number)

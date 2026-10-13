@@ -48,7 +48,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     
     params = [ {'title': 'Serial Number', 'name': 'serial_num', 'type': 'str', 
                 'value': '', 'readonly': True,},
-                {'title': 'Buffer Number', 'name': 'buff_num', 'type': 'int', 
+                {'title': 'Homing buffer', 'name': 'buff_num', 'type': 'int', 
                 'value': 1, 'limits': [0, 9],}  
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names)
 
@@ -125,8 +125,10 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         self.move_abs(self.current_value + value)
 
     def move_home(self):
-        """Move the current axis back to position 0"""
-        self.move_abs(DataActuator(data=0, units=self.axis_unit))    
+        """Run the homing program of the controller and wait for its end"""
+        self.controller.run_buffer(self.settings['buff_num'])
+        self.controller.wait_program_end(self.settings['buff_num'])
+        self.target_value = self.get_actuator_value()   
 
     def stop_motion(self):
         """Stop the current axis and emit the move_done signal"""
