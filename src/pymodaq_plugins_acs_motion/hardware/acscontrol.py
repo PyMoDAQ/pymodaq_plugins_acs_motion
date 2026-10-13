@@ -10,6 +10,8 @@ from acspy import acsc
 
 
 class Controller(object):
+    PST_RUN = 0x02  # bit set in the program state while the program is running
+    
     def __init__(self, contype="simulator", n_axes=8):
         self.contype = contype
         self.axes = []
@@ -27,15 +29,15 @@ class Controller(object):
         return acsc.getSerialNumber(self.hc)
     
     def run_buffer(self, buffer_number=1):
-        """Loads a buffer file."""
+        """Runs the program stored in the buffer."""
         acsc.runBuffer(self.hc, buffer_number)
 
-    def wait_program_end(self, buffer_number=1, timeout=120000):
-        """Waits until the program of the buffer has finished (timeout in ms)."""
-        acsc.waitProgramEnd(self.hc, buffer_number, timeout)
+    def is_program_running(self, buffer_number=1):
+        """Returns True while the program of the buffer is running."""
+        return bool(acsc.getProgramState(self.hc, buffer_number) & self.PST_RUN)
         
     def stop_buffer(self, buffer_number=1):
-        """Stops a buffer file."""
+        """Stops the program running in the buffer."""
         acsc.stopBuffer(self.hc, buffer_number)
 
     def get_axes_count(self):

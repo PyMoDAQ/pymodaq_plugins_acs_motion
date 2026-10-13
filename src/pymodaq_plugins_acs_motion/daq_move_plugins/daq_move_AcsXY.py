@@ -30,7 +30,9 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     The homing program provided with the stages must be stored in a buffer of the controller
     (buffer 1 by default on the tested equipment, see the 'Homing buffer' parameter).
     The plugin never modifies it.
-    The Home button runs this program and waits for its end: it homes all the axes at once.
+    The Home button starts this program (it homes all the axes at once); the move is done when the
+    program ends. Stop interrupts the homing program and halts all the axes: the stages must then be
+    homed again before any other move, as the program disables the limit switch protection while homing.
   
     Attributes:
     -----------
@@ -127,14 +129,27 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         self.move_abs(self.current_value + value)
 
     def move_home(self):
-        """Run the homing program of the controller and wait for its end"""
-        self.controller.run_buffer(self.settings['buff_num'])
-        self.controller.wait_program_end(self.settings['buff_num'])
-        self.target_value = self.get_actuator_value()   
+        """Start the homing program of the controller, without waiting for its end"""
+        buffer = self.settings['buff_num']
+        if self.controller.is_program_running(buffer):
+            return  # homing already in progress: ignore the repeated request
+        self.controller.run_buffer(buffer)
+        home = DataActuator(data=0, units=self.axis_unit)
+        self.target_value = self.get_position_with_scaling(home)
+
+    def user_condition_to_reach_target(self) -> bool:
+        """A move is done only when the homing program is not running"""
+        return not self.controller.is_program_running(self.settings['buff_num'])
 
     def stop_motion(self):
-        """Stop the current axis and emit the move_done signal"""
-        self.controller.axes[self.axis_value].halt()
+        """Stop the homing program if it is running, then halt the axes"""
+        buffer = self.settings['buff_num']
+        if self.controller.is_program_running(buffer):
+            self.controller.stop_buffer(buffer)
+            for axis in self.controller.axes:
+                axis.halt()  # the program may have left any axis jogging
+        else:
+            self.controller.axes[self.axis_value].halt()
         self.move_done()
 
 

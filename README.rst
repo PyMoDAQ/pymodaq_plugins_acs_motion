@@ -39,8 +39,10 @@ Installation instructions
 The user has to install the drivers from ACS. The homing program provided with the stages
 must be stored in a buffer of the controller (buffer 1 by default, set with the
 'Homing buffer' parameter of the plugin). The plugin never modifies the buffers of the
-controller: the Home button runs the homing program and waits for its end, homing all the
-axes at once. It is recommended to keep a full backup of the controller application, made
+controller: the Home button starts this program (it homes all the axes at once); the move is done when the
+program ends. Stop interrupts the homing program and halts all the axes: the stages must then be
+homed again before any other move, as the program disables the limit switch protection while homing. 
+It is recommended to keep a full backup of the controller application, made
 with the Application Wizard of SPiiPlus MMI Application Studio. Users are encouraged to check
 the compatibility of their ACS hardware with the latest version of the plugin, and to refer
 to the ACS documentation for any specific setup requirements.
