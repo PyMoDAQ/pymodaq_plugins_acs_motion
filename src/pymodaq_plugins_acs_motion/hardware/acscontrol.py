@@ -30,10 +30,10 @@ class Controller(object):
         """Loads a buffer file."""
         acsc.runBuffer(self.hc, buffer_number)
 
-    def load_buffer(self, buffer_number=1, program_name="buffer"):
-        """Loads a buffer file."""
-        acsc.loadBuffer(self.hc, buffer_number, program_name)
-
+    def wait_program_end(self, buffer_number=1, timeout=120000):
+        """Waits until the program of the buffer has finished (timeout in ms)."""
+        acsc.waitProgramEnd(self.hc, buffer_number, timeout)
+        
     def stop_buffer(self, buffer_number=1):
         """Stops a buffer file."""
         acsc.stopBuffer(self.hc, buffer_number)
@@ -84,6 +84,10 @@ class Axis(object):
     def ptpr(self, distance, wait=acsc.SYNCHRONOUS):
         """Performance a point to point move in relative coordinates."""
         self.ptp(distance, coordinates="relative", wait=wait)
+
+    def halt(self, wait=acsc.SYNCHRONOUS):
+        """Stops the motion of the axis using the defined deceleration."""
+        acsc.halt(self.controller.hc, self.axisno, wait)
 
     @property
     def axis_state(self):

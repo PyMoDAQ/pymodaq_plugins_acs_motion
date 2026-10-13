@@ -37,8 +37,15 @@ The stages were alio's translation stages  AI-CM-6000-XY
 
 Installation instructions
 =========================
-The user as to install the drivers from ACS. He may also need to intialise the stage within the software with the buffer file provided by ACS. In this new release, the plugin is able to load the buffer file automatically during initialization. Users are encouraged to check the compatibility of their ACS hardware with the latest version of the plugin. Additionally, it is recommended to refer to the ACS documentation for any specific setup requirements.
+The user has to install the drivers from ACS. The homing program provided with the stages
+must be stored in a buffer of the controller (buffer 1 by default, set with the
+'Homing buffer' parameter of the plugin). The plugin never modifies the buffers of the
+controller: the Home button runs the homing program and waits for its end, homing all the
+axes at once. It is recommended to keep a full backup of the controller application, made
+with the Application Wizard of SPiiPlus MMI Application Studio. Users are encouraged to check
+the compatibility of their ACS hardware with the latest version of the plugin, and to refer
+to the ACS documentation for any specific setup requirements..
 
-* PyMoDAQ’s version: developed with PyMoDAQ 5.0.5
+* PyMoDAQ’s version: developed with PyMoDAQ 5.3.2
 * Operating system’s version: Windows 11 
 * The plugin assumes that the acs drivers are installed. 
