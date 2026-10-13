@@ -24,11 +24,13 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     (It has been tested with USB to ethernet adapter).
     Tested with ACS SPiiPlusEC controller and one drive UDMnt(2 axes).
     The stages were alio's translation stages  AI-CM-6000-XY.
-    PyMoDAQ version during the test was PyMoDAQ==5.0.5.
+    PyMoDAQ version during the test was PyMoDAQ==5.3.2.
     The operating system used was Windows 11.
     Installation instructions: ACS drivers must be installed from the manufacturer's.
-    They usually come with the controller and with a "buffer" file for coniguration.
-    
+    The homing program provided with the stages must be stored in a buffer of the controller
+    (buffer 1 by default on the tested equipment, see the 'Homing buffer' parameter).
+    The plugin never modifies it.
+    The Home button runs this program and waits for its end: it homes all the axes at once.
   
     Attributes:
     -----------
