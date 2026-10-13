@@ -126,7 +126,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
 
     def move_rel(self, value: DataActuator):
         """Move the actuator by the relative amount defined by value"""
-        self.move_abs(self.current_value + value)
+        self.move_abs(self.get_actuator_value() + value)
 
     def move_home(self):
         """Start the homing program of the controller, without waiting for its end"""
