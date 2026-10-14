@@ -36,6 +36,10 @@ class Controller(object):
     def is_program_running(self, buffer_number=1):
         """Returns True while the program of the buffer is running."""
         return bool(acsc.getProgramState(self.hc, buffer_number) & self.PST_RUN)
+    
+    def wait_program_end(self, buffer_number=1, timeout=60000):
+        """Waits until the program of the buffer has finished (timeout in ms)."""
+        acsc.waitProgramEnd(self.hc, buffer_number, timeout)
         
     def stop_buffer(self, buffer_number=1):
         """Stops the program running in the buffer."""
@@ -54,7 +58,7 @@ class Controller(object):
         """Waits until all axes are enabled (timeout in ms for each axis)."""
         for a in self.axes:
             a.wait_enabled(timeout)
-            
+
     def disable_all(self, wait=acsc.SYNCHRONOUS):
         """Disables all axes."""
         for a in self.axes:
