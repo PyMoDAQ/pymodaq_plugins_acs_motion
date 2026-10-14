@@ -4,6 +4,7 @@ from pymodaq.control_modules.move_utility_classes import (DAQ_Move_base, comon_p
                                                           main, DataActuatorType, DataActuator)
 
 from pymodaq_gui.parameter import Parameter
+import threading
 
 try:
     from pymodaq_plugins_acs_motion.hardware.acscontrol import Controller  # ACS controller wrapper
@@ -110,6 +111,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
             self.controller = Controller(contype="ethernet", n_axes=2) 
             self.controller.connect()  # any object that will control the stages
             self.controller.enable_all()  # enable all axes
+            self.controller.wait_all_enabled() #wait for axis enabled
             self.settings['serial_num']=self.controller.serial_number()
             
           
@@ -129,13 +131,22 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         self.move_abs(self.get_actuator_value() + value)
 
     def move_home(self):
-        """Start the homing program of the controller, without waiting for its end"""
+        """Start the homing program of the controller; move_done is called when it ends"""
         buffer = self.settings['buff_num']
         if self.controller.is_program_running(buffer):
             return  # homing already in progress: ignore the repeated request
         self.controller.run_buffer(buffer)
         home = DataActuator(data=0, units=self.axis_unit)
         self.target_value = self.get_position_with_scaling(home)
+        threading.Thread(target=self._wait_homing_end, args=(buffer,), daemon=True).start()
+
+    def _wait_homing_end(self, buffer):
+        """Runs in the background: waits for the end of the homing program, then ends the move"""
+        try:
+            self.controller.wait_program_end(buffer)
+        except Exception:  # timeout or program stopped: the move is over in any case
+            pass
+        self.move_done(self.get_actuator_value())
 
     def user_condition_to_reach_target(self) -> bool:
         """A move is done only when the homing program is not running"""
@@ -148,8 +159,8 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
             self.controller.stop_buffer(buffer)
             for axis in self.controller.axes:
                 axis.halt()  # the program may have left any axis jogging
-        else:
-            self.controller.axes[self.axis_value].halt()
+            return  # move_done is called by the homing thread once the program has stopped
+        self.controller.axes[self.axis_value].halt()
         self.move_done()
 
 
