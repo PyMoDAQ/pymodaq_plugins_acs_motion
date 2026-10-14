@@ -110,6 +110,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
             self.controller = Controller(contype="ethernet", n_axes=2) 
             self.controller.connect()  # any object that will control the stages
             self.controller.enable_all()  # enable all axes
+            self.controller.wait_all_enabled() #wait for axis enabled
             self.settings['serial_num']=self.controller.serial_number()
             
           
