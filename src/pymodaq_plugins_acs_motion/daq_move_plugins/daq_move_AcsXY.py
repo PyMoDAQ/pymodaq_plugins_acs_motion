@@ -136,14 +136,14 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         The homing cannot be interrupted from PyMoDAQ: the program disables the limit switch
         protection while homing, so stopping it midway would leave the stages unprotected.
         """
-        buffer = self.settings['buff_num']
-        if self.controller.is_program_running(buffer):
+        homing_buffer = self.settings['buff_num']
+        if self.controller.is_program_running(homing_buffer):
             self.emit_status(ThreadCommand('Update_Status', ['Homing already in progress']))
             return
         self.emit_status(ThreadCommand('Update_Status',
                                        ['Homing all axes (about 20 s), it cannot be interrupted...']))
         try:
-            self.controller.home(buffer)
+            self.controller.home(homing_buffer)
         except Exception as e:  # timeout or communication error: the move is over in any case
             self.emit_status(ThreadCommand('Update_Status', [f'Homing error: {e}']))
         self.move_done(self.get_actuator_value())
