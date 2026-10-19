@@ -40,7 +40,13 @@ class Controller(object):
     def wait_program_end(self, buffer_number=1, timeout=60000):
         """Waits until the program of the buffer has finished (timeout in ms)."""
         acsc.waitProgramEnd(self.hc, buffer_number, timeout)
-        
+
+    def home(self, buffer_number=1, timeout=60000):
+        """Runs the homing program stored in the buffer (usually provided with the stages)
+        and waits for its end (timeout in ms)."""
+        self.run_buffer(buffer_number)
+        self.wait_program_end(buffer_number, timeout)
+
     def stop_buffer(self, buffer_number=1):
         """Stops the program running in the buffer."""
         acsc.stopBuffer(self.hc, buffer_number)

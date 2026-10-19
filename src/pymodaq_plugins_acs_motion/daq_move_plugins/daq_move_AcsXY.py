@@ -31,9 +31,9 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     The homing program provided with the stages must be stored in a buffer of the controller
     (buffer 1 by default on the tested equipment, see the 'Homing buffer' parameter).
     The plugin never modifies it.
-    The Home button starts this program (it homes all the axes at once); the move is done when the
-    program ends. Stop interrupts the homing program and halts all the axes: the stages must then be
-    homed again before any other move, as the program disables the limit switch protection while homing.
+    The Home button runs this program and waits for its end (about 20 s); it homes all the axes at once.
+    The homing cannot be interrupted from PyMoDAQ, as the program disables the limit switch protection
+    while homing: use the emergency stop of the controller if needed.
   
     Attributes:
     -----------
@@ -143,8 +143,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         self.emit_status(ThreadCommand('Update_Status',
                                        ['Homing all axes (about 20 s), it cannot be interrupted...']))
         try:
-            self.controller.run_buffer(buffer)
-            self.controller.wait_program_end(buffer)
+            self.controller.home(buffer)
         except Exception as e:  # timeout or communication error: the move is over in any case
             self.emit_status(ThreadCommand('Update_Status', [f'Homing error: {e}']))
         self.move_done(self.get_actuator_value())
