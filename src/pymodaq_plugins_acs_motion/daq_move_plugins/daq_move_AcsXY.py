@@ -41,6 +41,8 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
          hardware library.
 
     """
+
+    supported_platforms = ('win32',)  # the ACS library uses ctypes.windll
     is_multiaxes = True
     # Configured for two axes, can be extended up to 8 axes.
     _axis_names: Union[List[str], Dict[str, int]] = {'Axis0': 0, 'Axis1': 1}
