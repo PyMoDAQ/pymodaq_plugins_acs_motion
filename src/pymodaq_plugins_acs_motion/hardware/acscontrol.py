@@ -8,6 +8,9 @@ Here we add the ability to get the serial number and to load the buffer file.
 from __future__ import division, print_function
 from acspy import acsc
 from ctypes import c_int
+from pymodaq_utils.config import GlobalConfig
+
+config = GlobalConfig()
 
 
 class Controller(object):
@@ -41,11 +44,15 @@ class Controller(object):
         """Waits until the program of the buffer has finished (timeout in ms)."""
         acsc.waitProgramEnd(self.hc, buffer_number, timeout)
 
-    def home(self, buffer_number=1, timeout=60000):
-        """Runs the homing program stored in the buffer (usually provided with the stages)
-        and waits for its end (timeout in ms)."""
-        self.run_buffer(buffer_number)
-        self.wait_program_end(buffer_number, timeout)
+    @property
+    def homing_buffer(self) -> int:
+        """Buffer storing the homing program, as set in the configuration file of the plugin"""
+        return config('acs_motion', 'homing_buffer')
+
+    def home(self, timeout=60000):
+        """Runs the homing program provided with the stages and waits for its end (timeout in ms)"""
+        self.run_buffer(self.homing_buffer)
+        self.wait_program_end(self.homing_buffer, timeout)
 
     def stop_buffer(self, buffer_number=1):
         """Stops the program running in the buffer."""

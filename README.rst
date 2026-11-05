@@ -38,7 +38,7 @@ Installation instructions
 
 The user has to install the drivers from ACS. The homing program provided with the stages
 must be stored in a buffer of the controller (buffer 1 by default, set with the
-'Homing buffer' parameter of the plugin). The plugin never modifies the buffers of the
+homing_buffer entry of the configuration file of the plugin). The plugin never modifies the buffers of the
 controller: the Home button runs this program and waits for its end (about 20 s); it homes all the
 axes at once. The homing cannot be interrupted from PyMoDAQ, as the program disables the limit switch
 protection while homing: use the emergency stop of the controller if needed.

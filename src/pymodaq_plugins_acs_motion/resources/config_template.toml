@@ -1,2 +1,3 @@
 title = 'this is the configuration file of the plugin pymodaq_plugins_acs_motion'
 
+homing_buffer = 1  # buffer of the controller storing the homing program provided with the stages

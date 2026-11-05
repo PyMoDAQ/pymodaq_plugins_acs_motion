@@ -29,7 +29,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     The operating system used was Windows 11.
     Installation instructions: ACS drivers must be installed from the manufacturer's.
     The homing program provided with the stages must be stored in a buffer of the controller
-    (buffer 1 by default on the tested equipment, see the 'Homing buffer' parameter).
+    (buffer 1 on the tested equipment, set with the homing_buffer entry of the plugin configuration file).
     The plugin never modifies it.
     The Home button runs this program and waits for its end (about 20 s); it homes all the axes at once.
     The homing cannot be interrupted from PyMoDAQ, as the program disables the limit switch protection
@@ -52,9 +52,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     data_actuator_type = DataActuatorType.DataActuator
     
     params = [ {'title': 'Serial Number', 'name': 'serial_num', 'type': 'str', 
-                'value': '', 'readonly': True,},
-                {'title': 'Homing buffer', 'name': 'buff_num', 'type': 'int', 
-                'value': 1, 'limits': [0, 9],}  
+                'value': '', 'readonly': True,} 
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names)
 
     def ini_attributes(self):
@@ -132,18 +130,16 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
 
     def move_home(self):
         """Run the homing program of the controller (all axes) and wait for its end.
-
         The homing cannot be interrupted from PyMoDAQ: the program disables the limit switch
         protection while homing, so stopping it midway would leave the stages unprotected.
         """
-        homing_buffer = self.settings['buff_num']
-        if self.controller.is_program_running(homing_buffer):
+        if self.controller.is_program_running(self.controller.homing_buffer):
             self.emit_status(ThreadCommand('Update_Status', ['Homing already in progress']))
             return
         self.emit_status(ThreadCommand('Update_Status',
                                        ['Homing all axes (about 20 s), it cannot be interrupted...']))
         try:
-            self.controller.home(homing_buffer)
+            self.controller.home()
         except Exception as e:  # timeout or communication error: the move is over in any case
             self.emit_status(ThreadCommand('Update_Status', [f'Homing error: {e}']))
         self.move_done(self.get_actuator_value())
