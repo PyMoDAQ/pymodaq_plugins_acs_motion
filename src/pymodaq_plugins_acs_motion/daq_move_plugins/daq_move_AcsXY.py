@@ -4,6 +4,7 @@ from pymodaq.control_modules.move_utility_classes import (DAQ_Move_base, comon_p
                                                           main, DataActuatorType, DataActuator)
 
 from pymodaq_gui.parameter import Parameter
+from pymodaq_utils.utils import ThreadCommand
 
 try:
     from pymodaq_plugins_acs_motion.hardware.acscontrol import Controller  # ACS controller wrapper
@@ -28,11 +29,11 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     The operating system used was Windows 11.
     Installation instructions: ACS drivers must be installed from the manufacturer's.
     The homing program provided with the stages must be stored in a buffer of the controller
-    (buffer 1 by default on the tested equipment, see the 'Homing buffer' parameter).
+    (buffer 1 on the tested equipment, set with the homing_buffer entry of the plugin configuration file).
     The plugin never modifies it.
-    The Home button starts this program (it homes all the axes at once); the move is done when the
-    program ends. Stop interrupts the homing program and halts all the axes: the stages must then be
-    homed again before any other move, as the program disables the limit switch protection while homing.
+    The Home button runs this program and waits for its end (about 20 s); it homes all the axes at once.
+    The homing cannot be interrupted from PyMoDAQ, as the program disables the limit switch protection
+    while homing: use the emergency stop of the controller if needed.
   
     Attributes:
     -----------
@@ -53,9 +54,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
     data_actuator_type = DataActuatorType.DataActuator
     
     params = [ {'title': 'Serial Number', 'name': 'serial_num', 'type': 'str', 
-                'value': '', 'readonly': True,},
-                {'title': 'Homing buffer', 'name': 'buff_num', 'type': 'int', 
-                'value': 1, 'limits': [0, 9],}  
+                'value': '', 'readonly': True,} 
                 ] + comon_parameters_fun(is_multiaxes, axis_names=_axis_names)
 
     def ini_attributes(self):
@@ -112,6 +111,7 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
             self.controller = Controller(contype="ethernet", n_axes=2) 
             self.controller.connect()  # any object that will control the stages
             self.controller.enable_all()  # enable all axes
+            self.controller.wait_all_enabled() #wait for axis enabled
             self.settings['serial_num']=self.controller.serial_number()
             
           
@@ -131,27 +131,24 @@ class DAQ_Move_AcsXY(DAQ_Move_base):
         self.move_abs(self.get_actuator_value() + value)
 
     def move_home(self):
-        """Start the homing program of the controller, without waiting for its end"""
-        buffer = self.settings['buff_num']
-        if self.controller.is_program_running(buffer):
-            return  # homing already in progress: ignore the repeated request
-        self.controller.run_buffer(buffer)
-        home = DataActuator(data=0, units=self.axis_unit)
-        self.target_value = self.get_position_with_scaling(home)
-
-    def user_condition_to_reach_target(self) -> bool:
-        """A move is done only when the homing program is not running"""
-        return not self.controller.is_program_running(self.settings['buff_num'])
+        """Run the homing program of the controller (all axes) and wait for its end.
+        The homing cannot be interrupted from PyMoDAQ: the program disables the limit switch
+        protection while homing, so stopping it midway would leave the stages unprotected.
+        """
+        if self.controller.is_program_running(self.controller.homing_buffer):
+            self.emit_status(ThreadCommand('Update_Status', ['Homing already in progress']))
+            return
+        self.emit_status(ThreadCommand('Update_Status',
+                                       ['Homing all axes (about 20 s), it cannot be interrupted...']))
+        try:
+            self.controller.home()
+        except Exception as e:  # timeout or communication error: the move is over in any case
+            self.emit_status(ThreadCommand('Update_Status', [f'Homing error: {e}']))
+        self.move_done(self.get_actuator_value())
 
     def stop_motion(self):
-        """Stop the homing program if it is running, then halt the axes"""
-        buffer = self.settings['buff_num']
-        if self.controller.is_program_running(buffer):
-            self.controller.stop_buffer(buffer)
-            for axis in self.controller.axes:
-                axis.halt()  # the program may have left any axis jogging
-        else:
-            self.controller.axes[self.axis_value].halt()
+        """Stop the current axis and emit the move_done signal"""
+        self.controller.axes[self.axis_value].halt()
         self.move_done()
 
 

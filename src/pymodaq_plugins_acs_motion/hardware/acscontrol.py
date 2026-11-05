@@ -7,6 +7,10 @@ Here we add the ability to get the serial number and to load the buffer file.
 """
 from __future__ import division, print_function
 from acspy import acsc
+from ctypes import c_int
+from pymodaq_utils.config import GlobalConfig
+
+config = GlobalConfig()
 
 
 class Controller(object):
@@ -35,7 +39,21 @@ class Controller(object):
     def is_program_running(self, buffer_number=1):
         """Returns True while the program of the buffer is running."""
         return bool(acsc.getProgramState(self.hc, buffer_number) & self.PST_RUN)
-        
+    
+    def wait_program_end(self, buffer_number=1, timeout=60000):
+        """Waits until the program of the buffer has finished (timeout in ms)."""
+        acsc.waitProgramEnd(self.hc, buffer_number, timeout)
+
+    @property
+    def homing_buffer(self) -> int:
+        """Buffer storing the homing program, as set in the configuration file of the plugin"""
+        return config('acs_motion', 'homing_buffer')
+
+    def home(self, timeout=60000):
+        """Runs the homing program provided with the stages and waits for its end (timeout in ms)"""
+        self.run_buffer(self.homing_buffer)
+        self.wait_program_end(self.homing_buffer, timeout)
+
     def stop_buffer(self, buffer_number=1):
         """Stops the program running in the buffer."""
         acsc.stopBuffer(self.hc, buffer_number)
@@ -48,6 +66,11 @@ class Controller(object):
         """Enables all axes."""
         for a in self.axes:
             a.enable()
+
+    def wait_all_enabled(self, timeout=5000):
+        """Waits until all axes are enabled (timeout in ms for each axis)."""
+        for a in self.axes:
+            a.wait_enabled(timeout)
 
     def disable_all(self, wait=acsc.SYNCHRONOUS):
         """Disables all axes."""
@@ -73,6 +96,12 @@ class Axis(object):
 
     def disable(self, wait=acsc.SYNCHRONOUS):
         acsc.disable(self.controller.hc, self.axisno, wait)
+
+    def wait_enabled(self, timeout=5000):
+        """Waits until the axis is enabled (timeout in ms), raises an AcscError on timeout.
+        acsc_WaitMotorEnabled is not exposed by ACSpy, so it is called directly."""
+        acsc.call_acsc(acsc.acs.acsc_WaitMotorEnabled, self.controller.hc,
+                       c_int(self.axisno), c_int(1), c_int(timeout))
 
     def ptp(self, target, coordinates="absolute", wait=acsc.SYNCHRONOUS):
         """Performs a point to point move in either relative or absolute
